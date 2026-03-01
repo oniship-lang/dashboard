@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aila's Cyber Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --primary-color: #00ffff;
+            --secondary-color: #ff00ff;
+            --text-color: #fff;
+            --glow-spread: 8px;
+        }
+        body {
+            background-color: transparent;
+            color: var(--primary-color);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%; height: 100vh;
+            margin: 0; padding: 0;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        /* 統合ダッシュボードのコンテナ */
+        .dashboard-container {
+            position: relative;
+            width: 320px;
+            padding: 15px;
+            border: 2px solid var(--primary-color);
+            border-radius: 12px;
+            box-shadow: 0 0 var(--glow-spread) var(--primary-color), inset 0 0 10px rgba(0, 255, 255, 0.1);
+            background: linear-gradient(135deg, rgba(11, 12, 16, 0.95) 0%, rgba(20, 20, 25, 0.95) 100%);
+            text-align: center;
+            overflow: hidden;
+            margin: 0;
+        }
+        /* サイバーパンクスキャンライン */
+        .dashboard-container::before {
+            content: "";
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 2px,
+                rgba(0, 255, 255, 0.03) 3px, rgba(0, 255, 255, 0.03) 4px
+            );
+            pointer-events: none; z-index: 1;
+        }
+
+        /* ===== デジタル時計セクション ===== */
+        .clock-section {
+            position: relative; z-index: 2;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed var(--secondary-color);
+            margin-bottom: 10px;
+        }
+        .date-display {
+            font-size: 14px; color: var(--text-color);
+            letter-spacing: 2px; margin-bottom: 5px;
+            text-shadow: 0 0 5px var(--text-color);
+        }
+        .time-display {
+            font-size: 42px; font-weight: bold;
+            color: var(--primary-color);
+            text-shadow: 0 0 12px var(--primary-color);
+            letter-spacing: 3px;
+            line-height: 1;
+        }
+
+        /* ===== 天気予報セクション ===== */
+        .weather-section { position: relative; z-index: 2; }
+        .city-name {
+            font-size: 16px; font-weight: bold; color: var(--secondary-color);
+            text-shadow: 0 0 8px var(--secondary-color); letter-spacing: 1px;
+            text-transform: uppercase; margin-bottom: 5px;
+        }
+        .weather-main {
+            display: flex; justify-content: center; align-items: center; gap: 15px;
+            margin-bottom: 10px;
+        }
+        .weather-icon { font-size: 40px; text-shadow: 0 0 10px var(--primary-color); }
+        .temp-box { text-align: left; }
+        .temperature {
+            font-size: 36px; font-weight: bold; color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-color); line-height: 1;
+        }
+        .weather-desc {
+            font-size: 13px; color: var(--text-color);
+            text-shadow: 0 0 5px var(--primary-color);
+        }
+        
+        /* 詳細データ */
+        .weather-details {
+            display: flex; justify-content: space-around;
+            padding: 5px; margin-bottom: 10px; background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 6px;
+        }
+        .detail-item { font-size: 11px; color: var(--text-color); }
+        .detail-item strong { color: var(--primary-color); font-size: 13px; margin-left: 3px; }
+
+        /* スクロールエリア共通 */
+        .scroll-area {
+            display: flex; overflow-x: auto; gap: 8px; padding-bottom: 5px;
+        }
+        .scroll-area::-webkit-scrollbar { height: 3px; }
+        .scroll-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        .scroll-area::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 2px; }
+        
+        /* 時間ごと＆一週間 共通アイテムスタイル */
+        .forecast-item {
+            flex: 0 0 45px; display: flex; flex-direction: column; align-items: center;
+            border: 1px solid rgba(0, 255, 255, 0.2); padding: 5px; border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+        }
+        .f-time { font-size: 10px; color: var(--text-color); margin-bottom: 2px; }
+        .f-icon { font-size: 18px; margin: 2px 0; }
+        .f-temp { font-size: 12px; font-weight: bold; color: var(--primary-color); }
+        .f-sub { font-size: 9px; color: rgba(255,255,255,0.6); }
+
+        /* 設定パネル */
+        #settings-panel {
+            margin-top: 15px; padding: 10px; border: 1px solid var(--primary-color);
+            background: rgba(0, 0, 0, 0.85); border-radius: 10px;
+            box-shadow: 0 0 15px var(--primary-color); text-align: center; z-index: 40;
+        }
+        .setting-row { margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        input[type="color"] { cursor: pointer; background: none; border: none; height: 25px; }
+        input[type="text"] {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--primary-color);
+            color: var(--primary-color); padding: 4px; font-family: 'Courier New', Courier, monospace;
+            width: 100px; text-align: center; font-size: 12px;
+        }
+        button {
+            background-color: transparent; color: var(--secondary-color);
+            border: 2px solid var(--secondary-color); padding: 6px 12px;
+            font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;
+        }
+        button:hover { background-color: var(--secondary-color); color: #fff; box-shadow: 0 0 15px var(--secondary-color); }
+        #url-output {
+            margin-top: 8px; word-break: break-all; font-size: 11px; max-width: 300px;
+            padding: 8px; background: #000; border: 1px solid var(--primary-color); display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <div class="clock-section">
+            <div class="date-display" id="date-display">----/--/-- ---</div>
+            <div class="time-display" id="time-display">00:00:00</div>
+        </div>
+
+        <div class="weather-section">
+            <div class="city-name" id="display-city">SYS LOADING</div>
+            
+            <div class="weather-main">
+                <div class="weather-icon" id="weather-icon">--</div>
+                <div class="temp-box">
+                    <div class="temperature" id="temperature">--°C</div>
+                    <div class="weather-desc" id="weather-desc">Initializing...</div>
+                </div>
+            </div>
+            
+            <div class="weather-details">
+                <div class="detail-item">最高<strong><span id="temp-max">--</span></strong></div>
+                <div class="detail-item">最低<strong><span id="temp-min">--</span></strong></div>
+                <div class="detail-item">☔<strong id="precip-prob">--</strong><strong>%</strong></div>
+            </div>
+
+            <div class="scroll-area" id="forecast-scroll">
+                </div>
+        </div>
+    </div>
+
+    <div id="settings-panel">
+        <h3 style="margin-top:0; font-size: 14px;">📡 Dashboard Settings</h3>
+        <div class="setting-row">
+            <label style="font-size: 12px;">City:</label>
+            <input type="text" id="city-input" value="Minamiminowa">
+        </div>
+        <div class="setting-row">
+            <label style="font-size: 12px;">Primary:</label>
+            <input type="color" id="primary-color" value="#00ffff">
+        </div>
+        <div class="setting-row">
+            <label style="font-size: 12px;">Secondary:</label>
+            <input type="color" id="secondary-color" value="#ff00ff">
+        </div>
+        <button onclick="generateURL()">Notion用URLを発行</button>
+        <div id="url-output"></div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const isEmbed = params.get('embed') === 'true';
+        const root = document.documentElement;
+        
+        if (params.has('primary')) { root.style.setProperty('--primary-color', '#' + params.get('primary')); document.getElementById('primary-color').value = '#' + params.get('primary'); }
+        if (params.has('secondary')) { root.style.setProperty('--secondary-color', '#' + params.get('secondary')); document.getElementById('secondary-color').value = '#' + params.get('secondary'); }
+        
+        let targetCity = params.get('city') || 'Minamiminowa';
+        document.getElementById('city-input').value = targetCity;
+
+        if (isEmbed) {
+            document.getElementById('settings-panel').style.display = 'none';
+        } else {
+            const updateColors = () => {
+                root.style.setProperty('--primary-color', document.getElementById('primary-color').value);
+                root.style.setProperty('--secondary-color', document.getElementById('secondary-color').value);
+            };
+            document.getElementById('primary-color').addEventListener('input', updateColors);
+            document.getElementById('secondary-color').addEventListener('input', updateColors);
+            
+            let timeout = null;
+            document.getElementById('city-input').addEventListener('input', (e) => {
+                clearTimeout(timeout); timeout = setTimeout(() => fetchWeather(e.target.value), 1000);
+            });
+        }
+
+        // --- 時計のロジック ---
+        function updateClock() {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            const day = dayNames[now.getDay()];
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            document.getElementById('date-display').textContent = `${yyyy}-${mm}-${dd} ${day}`;
+            document.getElementById('time-display').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 天気のロジック ---
+        function getWeatherInfo(code) {
+            let icon = '❓'; let desc = 'Unknown';
+            if (code === 0) { icon = '☀️'; desc = '晴れ'; }
+            else if (code <= 3) { icon = '☁️'; desc = '曇り'; }
+            else if (code <= 48) { icon = '🌫️'; desc = '霧'; }
+            else if (code <= 57) { icon = '🌧️'; desc = '小雨'; }
+            else if (code <= 67) { icon = '☔'; desc = '雨'; }
+            else if (code <= 77) { icon = '❄️'; desc = '雪'; }
+            else if (code <= 82) { icon = '🌦️'; desc = 'にわか雨'; }
+            else if (code <= 99) { icon = '⚡'; desc = '雷雨'; }
+            return { icon, desc };
+        }
+
+        async function fetchWeather(city) {
+            document.getElementById('display-city').textContent = 'SEARCHING...';
+            try {
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+                const geoData = await geoRes.json();
+                
+                if (!geoData.results || geoData.results.length === 0) {
+                    document.getElementById('display-city').textContent = 'ERROR';
+                    return;
+                }
+                
+                const { latitude, longitude, name } = geoData.results[0];
+                document.getElementById('display-city').textContent = name;
+
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&hourly=temperature_2m,weathercode,precipitation_probability&timezone=Asia%2FTokyo&forecast_days=7`);
+                const weatherData = await weatherRes.json();
+                
+                // 現在
+                const current = weatherData.current;
+                document.getElementById('temperature').textContent = Math.round(current.temperature_2m) + '°';
+                const currentInfo = getWeatherInfo(current.weathercode);
+                document.getElementById('weather-icon').textContent = currentInfo.icon;
+                document.getElementById('weather-desc').textContent = currentInfo.desc;
+                
+                // 本日詳細
+                const daily = weatherData.daily;
+                document.getElementById('temp-max').textContent = Math.round(daily.temperature_2m_max[0]) + '°';
+                document.getElementById('temp-min').textContent = Math.round(daily.temperature_2m_min[0]) + '°';
+                document.getElementById('precip-prob').textContent = daily.precipitation_probability_max[0];
+                
+                // 予報スクロールエリア (時間ごと ＋ 週間 を一列に統合！)
+                const scrollContainer = document.getElementById('forecast-scroll');
+                scrollContainer.innerHTML = ''; 
+                
+                const now = new Date();
+                const currentHour = now.getHours();
+                const hourly = weatherData.hourly;
+
+                // 1. 直近6時間の予報
+                for (let i = currentHour + 1; i <= currentHour + 6 && i < 24; i++) {
+                    const time = hourly.time[i].split('T')[1].split(':')[0] + '時';
+                    const temp = Math.round(hourly.temperature_2m[i]);
+                    const info = getWeatherInfo(hourly.weathercode[i]);
+                    
+                    scrollContainer.innerHTML += `
+                        <div class="forecast-item">
+                            <div class="f-time">${time}</div>
+                            <div class="f-icon">${info.icon}</div>
+                            <div class="f-temp">${temp}°</div>
+                        </div>
+                    `;
+                }
+
+                // 2. 境界線代わりの縦棒
+                scrollContainer.innerHTML += `<div style="border-left: 1px dashed var(--secondary-color); margin: 0 5px;"></div>`;
+
+                // 3. 明日以降の週間予報
+                const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+                const todayIndex = now.getDay();
+                for (let i = 1; i < 7; i++) {
+                    const maxT = Math.round(daily.temperature_2m_max[i]);
+                    const info = getWeatherInfo(daily.weathercode[i]);
+                    const displayDay = dayNames[(todayIndex + i) % 7] + '曜';
+
+                    scrollContainer.innerHTML += `
+                        <div class="forecast-item" style="border-color: rgba(255,0,255,0.3);">
+                            <div class="f-time">${displayDay}</div>
+                            <div class="f-icon">${info.icon}</div>
+                            <div class="f-temp" style="color: var(--secondary-color);">${maxT}°</div>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                document.getElementById('display-city').textContent = 'SYS ERR';
+            }
+        }
+        fetchWeather(targetCity);
+
+        // --- URL発行 ---
+        function generateURL() {
+            const primary = document.getElementById('primary-color').value.substring(1);
+            const secondary = document.getElementById('secondary-color').value.substring(1);
+            const city = encodeURIComponent(document.getElementById('city-input').value);
+            
+            const ts = new Date().getTime();
+            const baseUrl = window.location.origin + window.location.pathname;
+            const generatedUrl = `${baseUrl}?embed=true&primary=${primary}&secondary=${secondary}&city=${city}&v=${ts}`;
+            
+            const outputBox = document.getElementById('url-output');
+            outputBox.style.display = 'block';
+            outputBox.innerHTML = `<strong>コピーしてNotionに埋め込んでください:</strong><br><br>${generatedUrl}`;
+            navigator.clipboard.writeText(generatedUrl);
+        }
+    </script>
+</body>
+</html>
