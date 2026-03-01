@@ -6,14 +6,14 @@
     <title>Aila's Cyber Dashboard</title>
     <style>
         :root {
-            --bg-color: #0b0c10;
+            --bg-color: #191919; /* Notionのダークモード背景色に擬態！ */
             --primary-color: #00ffff;
             --secondary-color: #ff00ff;
             --text-color: #fff;
             --glow-spread: 8px;
         }
         body {
-            background-color: transparent;
+            background-color: var(--bg-color);
             color: var(--primary-color);
             font-family: 'Courier New', Courier, monospace;
             display: flex;
@@ -99,15 +99,13 @@
         .detail-item { font-size: 11px; color: var(--text-color); }
         .detail-item strong { color: var(--primary-color); font-size: 13px; margin-left: 3px; }
 
-        /* ===== スクロールエリア大改良！ ===== */
+        /* ===== スクロールエリア ===== */
         .scroll-area {
-            display: flex; overflow-x: auto; gap: 12px; /* パネルの間隔を拡大 */
-            padding-bottom: 15px; /* スクロールバーが被らないように下の余白を拡大 */
-            /* ドラッグスクロールしやすくする設定 */
+            display: flex; overflow-x: auto; gap: 12px;
+            padding-bottom: 15px;
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
         }
-        /* スクロールバー自体を太く、掴みやすく！ */
         .scroll-area::-webkit-scrollbar { height: 10px; }
         .scroll-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.4); border-radius: 5px; }
         .scroll-area::-webkit-scrollbar-thumb { 
@@ -116,14 +114,13 @@
             box-shadow: 0 0 8px var(--primary-color); 
         }
         .scroll-area::-webkit-scrollbar-thumb:hover {
-            background: var(--secondary-color); /* マウスオーバーで色が変わるエリート仕様 */
+            background: var(--secondary-color);
         }
         
-        /* 中の天気パネルも一回り大きく！ */
         .forecast-item {
-            flex: 0 0 55px; /* 横幅を拡大 */
+            flex: 0 0 55px;
             display: flex; flex-direction: column; align-items: center;
-            border: 1px solid rgba(0, 255, 255, 0.3); padding: 8px; /* 内側の余白を拡大 */
+            border: 1px solid rgba(0, 255, 255, 0.3); padding: 8px;
             border-radius: 8px;
             background: rgba(0,0,0,0.5);
             transition: all 0.2s ease;
@@ -131,10 +128,10 @@
         .forecast-item:hover {
             border-color: var(--secondary-color);
             box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
-            transform: translateY(-2px); /* ホバー時に少し浮き上がる！ */
+            transform: translateY(-2px);
         }
         .f-time { font-size: 12px; color: var(--text-color); margin-bottom: 3px; font-weight: bold; }
-        .f-icon { font-size: 24px; margin: 4px 0; } /* アイコンも大きく */
+        .f-icon { font-size: 24px; margin: 4px 0; }
         .f-temp { font-size: 15px; font-weight: bold; color: var(--primary-color); }
 
         /* 設定パネル */
@@ -188,7 +185,7 @@
             </div>
 
             <div class="scroll-area" id="forecast-scroll">
-                </div>
+            </div>
         </div>
     </div>
 
@@ -197,6 +194,10 @@
         <div class="setting-row">
             <label style="font-size: 12px;">City:</label>
             <input type="text" id="city-input" value="Minamiminowa">
+        </div>
+        <div class="setting-row">
+            <label style="font-size: 12px;">Background:</label>
+            <input type="color" id="bg-color" value="#191919">
         </div>
         <div class="setting-row">
             <label style="font-size: 12px;">Primary:</label>
@@ -215,6 +216,8 @@
         const isEmbed = params.get('embed') === 'true';
         const root = document.documentElement;
         
+        // パラメータから色を取得して適用
+        if (params.has('bg')) { root.style.setProperty('--bg-color', '#' + params.get('bg')); document.getElementById('bg-color').value = '#' + params.get('bg'); }
         if (params.has('primary')) { root.style.setProperty('--primary-color', '#' + params.get('primary')); document.getElementById('primary-color').value = '#' + params.get('primary'); }
         if (params.has('secondary')) { root.style.setProperty('--secondary-color', '#' + params.get('secondary')); document.getElementById('secondary-color').value = '#' + params.get('secondary'); }
         
@@ -225,9 +228,11 @@
             document.getElementById('settings-panel').style.display = 'none';
         } else {
             const updateColors = () => {
+                root.style.setProperty('--bg-color', document.getElementById('bg-color').value);
                 root.style.setProperty('--primary-color', document.getElementById('primary-color').value);
                 root.style.setProperty('--secondary-color', document.getElementById('secondary-color').value);
             };
+            document.getElementById('bg-color').addEventListener('input', updateColors);
             document.getElementById('primary-color').addEventListener('input', updateColors);
             document.getElementById('secondary-color').addEventListener('input', updateColors);
             
@@ -303,9 +308,9 @@
                 const currentHour = now.getHours();
                 const hourly = weatherData.hourly;
 
-                // 1. 直近6時間の予報
-                for (let i = currentHour + 1; i <= currentHour + 6 && i < 24; i++) {
-                    const time = hourly.time[i].split('T')[1].split(':')[0] + '時';
+                for (let i = currentHour + 1; i <= currentHour + 6; i++) {
+                    const timeStr = hourly.time[i].split('T')[1].split(':')[0];
+                    const time = parseInt(timeStr, 10) + '時';
                     const temp = Math.round(hourly.temperature_2m[i]);
                     const info = getWeatherInfo(hourly.weathercode[i]);
                     
@@ -318,10 +323,8 @@
                     `;
                 }
 
-                // 2. 境界線代わりの縦棒
                 scrollContainer.innerHTML += `<div style="border-left: 2px dashed var(--secondary-color); margin: 0 5px;"></div>`;
 
-                // 3. 明日以降の週間予報
                 const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
                 const todayIndex = now.getDay();
                 for (let i = 1; i < 7; i++) {
@@ -345,13 +348,15 @@
         fetchWeather(targetCity);
 
         function generateURL() {
+            const bg = document.getElementById('bg-color').value.substring(1);
             const primary = document.getElementById('primary-color').value.substring(1);
             const secondary = document.getElementById('secondary-color').value.substring(1);
             const city = encodeURIComponent(document.getElementById('city-input').value);
             
             const ts = new Date().getTime();
             const baseUrl = window.location.origin + window.location.pathname;
-            const generatedUrl = `${baseUrl}?embed=true&primary=${primary}&secondary=${secondary}&city=${city}&v=${ts}`;
+            // 背景色(bg)のパラメータを追加！
+            const generatedUrl = `${baseUrl}?embed=true&bg=${bg}&primary=${primary}&secondary=${secondary}&city=${city}&v=${ts}`;
             
             const outputBox = document.getElementById('url-output');
             outputBox.style.display = 'block';
